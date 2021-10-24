@@ -1,12 +1,43 @@
 from tkinter import * 
 from tkinter import ttk
+#from tkinter import font 
+import sqlite3 
+#import mysql.connector 
+#from mysql.connector import Error 
+#from PIL import Image,ImageTk
 
-root = Tk()
-#root.iconbitmap('images/registry.png')
-my_tree = ttk.Treeview(root)
+root = Tk() 
+#root.iconbitmap('images/regitry.png') 
 
+class funcoes(): 
+    def limpar_tela(self):
+        self.codigo_entry.delete(0,END) 
+        self.nome_entry.delete(0,END) 
+        self.telefone_entry.delete(0,END) 
+        self.cidade_entry.delete(0,END)
+    def conecta_db(self): 
+        self.conne = sqlite3.connect("clientes.db") 
+        self.cursor = self.conne.cursor() 
 
-class Applicacao():
+    def desconecta_db(self): 
+        self.conne.close()
+    def montaTabelas(self): 
+        self.conecta_db(); print("Conectando ao DB")
+    #creating the DB 
+        # self.cursor.execute(clientes.sql)
+
+style = ttk.Style()  
+style.theme_use("clam")
+style.configure("Treeview", 
+    background="silver", 
+    foreground="black",
+    fieldbackground="silver", 
+    font=('verdana',8,'bold')
+    )  
+
+style.map('listacli', 
+    background=[('selected','green')]) 
+class Applicacao(funcoes):
     def __init__(self):
         self.root = root
         self.tela()
@@ -35,7 +66,7 @@ class Applicacao():
     def widgets_frame1(self):
         # limpar
         self.bt_limpar = Button(
-            self.frame1, text="Limpar", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold'))
+            self.frame1, text="Limpar", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold'), command= self.limpar_tela)
         self.bt_limpar.place(relx=0.2, rely=0.1, relwidth=0.1, relheight=0.15)
         # buscar
         self.bt_buscar = Button(self.frame1, text="Buscar", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold'))
@@ -79,6 +110,7 @@ class Applicacao():
  
     def widgets_frame2(self): 
         self.listaCli = ttk.Treeview(self.frame2,height= 3, column=("col1","col2","col3","col4")) 
+
         self.listaCli.heading("#0",text="")
         self.listaCli.heading("#1",text="Código") 
         self.listaCli.heading("#2",text="Nome") 
