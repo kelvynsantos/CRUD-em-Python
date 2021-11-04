@@ -1,60 +1,121 @@
-from tkinter import * 
+from tkinter import *
 from tkinter import ttk
-#from tkinter import font 
-import sqlite3 
-#import mysql.connector 
-#from mysql.connector import Error 
-#from PIL import Image,ImageTk
+#from tkinter import font
+import sqlite3
 
-root = Tk() 
-#root.iconbitmap('images/regitry.png') 
+root = Tk()
+#root.iconbitmap('images/regitry.png')
 
-class funcoes(): 
+
+class funcoes():
     def limpar_tela(self):
-        self.codigo_entry.delete(0,END) 
-        self.nome_entry.delete(0,END) 
-        self.telefone_entry.delete(0,END) 
-        self.cidade_entry.delete(0,END)
-    def conecta_db(self): 
-        self.conne = sqlite3.connect("clientes.db") 
-        self.cursor = self.conne.cursor() 
+        self.codigo_entry.delete(0, END)
+        self.nome_entry.delete(0, END)
+        self.telefone_entry.delete(0, END)
+        self.cidade_entry.delete(0, END)
+    def conecta_db(self):
+        self.conne = sqlite3.connect("clientes.db")
+        self.cursor = self.conne.cursor();print("Conectando ao DB")
+    def desconecta_db(self):
+        self.conne.close();print("Desconectando ao DB")
+    def montaTabelas(self):
+        self.conecta_db()
+    #creating the DB
+        self.cursor.execute(""" 
+            CREATE TABLE IF NOT EXISTS clientes( 
+                cod INTEGER PRIMARY KEY, 
+                nome_cliente CHAR(40) NOT NULL,
+                telefone INTEGER(20),
+                cidade CHAR(40)
+            ); 
+        """)
+        self.conne.commit(); print("DB criado")
+        self.desconecta_db()
+    def variaveis(self):
+        self.codigo = self.codigo_entry.get()
+        self.nome = self.nome_entry.get()
+        self.telefone = self.telefone_entry.get()
+        self.cidade = self.cidade_entry.get()
+    def add_cliente(self):
+        self.variaveis()
+        self.conecta_db()
+        self.cursor.execute(""" 
+            INSERT INTO clientes (nome_cliente, telefone, cidade) VALUES (?,?,?)""", (self.nome, self.telefone, self.cidade))
+        self.conne.commit()
+        self.desconecta_db()
+        self.select_lista()
+        self.limpar_tela()
+    def select_lista(self):
+        self.listaCli.delete(*self.listaCli.get_children())
+        self.conecta_db()
+        lista = self.cursor.execute("""SELECT cod, nome_cliente, telefone, cidade FROM clientes 
+            ORDER BY nome_cliente ASC; """)
 
-    def desconecta_db(self): 
-        self.conne.close()
-    def montaTabelas(self): 
-        self.conecta_db(); print("Conectando ao DB")
-    #creating the DB 
-        # self.cursor.execute(clientes.sql)
+        for i in lista:
+            self.listaCli.insert("", END, values=i)
+        self.conne.commit()
+        self.desconecta_db()
+    def OnDoubleClick(self,event):
+        self.limpar_tela()
+        self.listaCli.selection()
 
-style = ttk.Style()  
+        for n in self.listaCli.selection():
+            col1, col2, col3, col4 = self.listaCli.item(n, 'values')
+            self.codigo_entry.insert(END, col1)
+            self.nome_entry.insert(END, col2)
+            self.telefone_entry.insert(END, col3)
+            self.cidade_entry.insert(END, col4)
+    def deleta_cliente(self):
+         self.variaveis()
+         self.conecta_db()
+         self.cursor.execute("""DELETE FROM clientes WHERE cod = ?""", (self.codigo))
+         self.conne.commit()
+         self.desconecta_db()
+         self.limpar_tela()
+         self.select_lista()
+    def altera_cliente(self):
+        self.variaveis()
+        self.conecta_db()
+        self.cursor.execute("""UPDATE clientes SET nome_cliente = ?, telefone = ?, cidade = ? 
+                WHERE cod = ?""", (self.nome, self.telefone, self.cidade, self.codigo))
+        self.conne.commit()
+        self.desconecta_db()
+        self.select_lista()
+        self.limpar_tela()
+style = ttk.Style()
 style.theme_use("clam")
-style.configure("Treeview", 
-    background="silver", 
+style.configure("Treeview",
+    background="silver",
     foreground="black",
-    fieldbackground="silver", 
+    fieldbackground="silver",
     font=('verdana',8,'bold')
-    )  
+    )
 
-style.map('listacli', 
-    background=[('selected','green')]) 
-class Applicacao(funcoes):
+style.map('listacli',
+    background=[('selected','green')])
+
+
+class Application(funcoes):
     def __init__(self):
         self.root = root
         self.tela()
         self.frames_da_tela()
-        self.widgets_frame1() 
-        self.widgets_frame2() 
+        self.widgets_frame1()
+        self.widgets_frame2()
+        self.montaTabelas()
+        self.select_lista()
+        self.Menu()
         root.mainloop()
     def tela(self):
-        self.root.title("Cadastro de clientes") 
+        self.root.title("Cadastro de clientes")
         self.root.configure(background='#080227')
         self.root.geometry("700x500")
         self.root.resizable(True, True)
         self.root.maxsize(width=900, height=700)
         self.root.minsize(width=500, height=400)
-#place, Pack and grid
 
     def frames_da_tela(self):
+        # place, Pack and grid
         self.frame1 = Frame(self.root, bd=4, bg='#c2d1e0',
                             highlightbackground='#759fe6', highlightthickness=4)
         self.frame1.place(relx=0.02, rely=0.02, relwidth=0.96, relheight=0.46)
@@ -66,19 +127,20 @@ class Applicacao(funcoes):
     def widgets_frame1(self):
         # limpar
         self.bt_limpar = Button(
-            self.frame1, text="Limpar", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold'), command= self.limpar_tela)
+            self.frame1, text="Limpar", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold')
+                    , command= self.limpar_tela)
         self.bt_limpar.place(relx=0.2, rely=0.1, relwidth=0.1, relheight=0.15)
         # buscar
         self.bt_buscar = Button(self.frame1, text="Buscar", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold'))
         self.bt_buscar.place(relx=0.3, rely=0.1, relwidth=0.1, relheight=0.15)
         # novo
-        self.bt_novo = Button(self.frame1, text="Novo", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold'))
+        self.bt_novo = Button(self.frame1, text="Novo", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold'), command= self.add_cliente)
         self.bt_novo.place(relx=0.6, rely=0.1, relwidth=0.1, relheight=0.15)
         # alterar
-        self.bt_alterar = Button(self.frame1, text="Alterar", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold'))
+        self.bt_alterar = Button(self.frame1, text="Alterar", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold'), command=self.altera_cliente)
         self.bt_alterar.place(relx=0.7, rely=0.1, relwidth=0.1, relheight=0.15)
         # apagar
-        self.bt_apagar = Button(self.frame1, text="Apagar", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold'))
+        self.bt_apagar = Button(self.frame1, text="Apagar", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold'), command=self.deleta_cliente)
         self.bt_apagar.place(relx=0.8, rely=0.1, relwidth=0.1, relheight=0.15)
 
         # label input codigo
@@ -107,26 +169,38 @@ class Applicacao(funcoes):
 
         self.cidade_entry = Entry(self.frame1)
         self.cidade_entry.place(relx=0.5, rely=0.7, relwidth=0.4)
- 
-    def widgets_frame2(self): 
-        self.listaCli = ttk.Treeview(self.frame2,height= 3, column=("col1","col2","col3","col4")) 
+
+    def widgets_frame2(self):
+        self.listaCli = ttk.Treeview(self.frame2,height= 3, column=("col1","col2","col3","col4"))
 
         self.listaCli.heading("#0",text="")
-        self.listaCli.heading("#1",text="Código") 
-        self.listaCli.heading("#2",text="Nome") 
-        self.listaCli.heading("#3",text="Telefone") 
-        self.listaCli.heading("#4",text="Cidade") 
-        
-        self.listaCli.column("#0", width=1) 
-        self.listaCli.column("#1",width=50) 
+        self.listaCli.heading("#1",text="Código")
+        self.listaCli.heading("#2",text="Nome")
+        self.listaCli.heading("#3",text="Telefone")
+        self.listaCli.heading("#4",text="Cidade")
+
+        self.listaCli.column("#0", width=1)
+        self.listaCli.column("#1",width=50)
         self.listaCli.column("#2",width=200)
         self.listaCli.column("#3",width=125)
-        self.listaCli.column("#4",width=125) 
-         
-        self.listaCli.place(relx=0.01, rely=0.1, relwidth=0.95, relheight=0.85) 
+        self.listaCli.column("#4",width=125)
 
-        self.scroolLista = Scrollbar(self.frame2, orient='vertical') 
-        self.listaCli.configure(yscroll=self.scroolLista.set) 
+        self.listaCli.place(relx=0.01, rely=0.1, relwidth=0.95, relheight=0.85)
+
+        self.scroolLista = Scrollbar(self.frame2, orient='vertical')
+        self.listaCli.configure(yscroll=self.scroolLista.set)
         self.scroolLista.place(relx=0.96,rely=0.1,relwidth=0.04, relheight=0.85)
-Applicacao() 
- 
+        self.listaCli.bind("<Double-1>",self.OnDoubleClick)
+    def Menu(self):
+        menubar = Menu(self.root)
+        self.root.config(menu = menubar)
+        filemenu1 = Menu(menubar)
+        filemenu2 = Menu(menubar)
+
+        def Quit(): self.root.destroy()
+        menubar.add_cascade(label= "Opções", menu= filemenu1)
+        menubar.add_cascade(label= "Sobre", menu= filemenu2)
+
+        filemenu1.add_command(label="Sair", command=Quit)
+        filemenu2.add_command(label="Limpa Cliente", command= self.limpar_tela)
+Application()
