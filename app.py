@@ -2,11 +2,48 @@ from tkinter import *
 from tkinter import ttk
 #from tkinter import font
 import sqlite3
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.platypus import SimpleDocTemplate, Image
+import webbrowser
 
 root = Tk()
 #root.iconbitmap('images/regitry.png')
 
+class Relatorios():
+    def printCliente(self):
+        webbrowser.open("cliente.pdf")
+    def geraRelatorioCliente(self):
+        self.c = canvas.Canvas("cliente.pdf")
+        self.codigoRel = self.codigo_entry.get()
+        self.nomeRel = self.nome_entry.get()
+        self.telefoneRel = self.telefone_entry.get()
+        self.cidadeRel = self.cidade_entry.get()
 
+        self.c.setFont("Helvetica-Bold", 24)
+        self.c.drawString(200, 790, 'Ficha do cliente')
+
+        self.c.setFont("Helvetica-Bold", 18)
+        self.c.drawString(50, 700, 'Código: ')
+        self.c.drawString(50, 670, 'Nome: ')
+        self.c.drawString(50, 630, 'Telefone: ')
+        self.c.drawString(50, 600, 'Cidade: ')
+
+
+        self.c.setFont("Helvetica", 18)
+        self.c.drawString(150, 700, self.codigoRel)
+        self.c.drawString(150, 670, self.nomeRel)
+        self.c.drawString(150, 630, self.telefoneRel)
+        self.c.drawString(150, 600, self.cidadeRel)
+
+
+        self.c.rect(20, 720, 550, 200, fill= False, stroke= True)
+
+        self.c.showPage()
+        self.c.save()
+        self.printCliente()
 class funcoes():
     def limpar_tela(self):
         self.codigo_entry.delete(0, END)
@@ -82,6 +119,22 @@ class funcoes():
         self.desconecta_db()
         self.select_lista()
         self.limpar_tela()
+    def busca_cliente(self):
+        self.conecta_db()
+        self.listaCli.delete(*self.listaCli.get_children())
+
+        self.nome_entry.insert(END,'%')
+        nome = self.nome_entry.get()
+        self.cursor.execute(
+            """SELECT cod, nome_cliente, telefone, cidade FROM clientes 
+            WHERE nome_cliente LIKE '%s' ORDER BY nome_cliente ASC""" % nome)
+        buscaNomeCli = self.cursor.fetchall()
+        for i in buscaNomeCli:
+            self.listaCli.insert("", END, values=1)
+        self.limpar_tela()
+        self.desconecta_db()
+
+
 style = ttk.Style()
 style.theme_use("clam")
 style.configure("Treeview",
@@ -95,7 +148,7 @@ style.map('listacli',
     background=[('selected','green')])
 
 
-class Application(funcoes):
+class Application(funcoes, Relatorios):
     def __init__(self):
         self.root = root
         self.tela()
@@ -131,7 +184,7 @@ class Application(funcoes):
                     , command= self.limpar_tela)
         self.bt_limpar.place(relx=0.2, rely=0.1, relwidth=0.1, relheight=0.15)
         # buscar
-        self.bt_buscar = Button(self.frame1, text="Buscar", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold'))
+        self.bt_buscar = Button(self.frame1, text="Buscar", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold'), command=self.busca_cliente)
         self.bt_buscar.place(relx=0.3, rely=0.1, relwidth=0.1, relheight=0.15)
         # novo
         self.bt_novo = Button(self.frame1, text="Novo", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold'), command= self.add_cliente)
@@ -199,8 +252,10 @@ class Application(funcoes):
 
         def Quit(): self.root.destroy()
         menubar.add_cascade(label= "Opções", menu= filemenu1)
-        menubar.add_cascade(label= "Sobre", menu= filemenu2)
+        menubar.add_cascade(label= "Relatórios", menu= filemenu2)
 
         filemenu1.add_command(label="Sair", command=Quit)
-        filemenu2.add_command(label="Limpa Cliente", command= self.limpar_tela)
+        filemenu1.add_command(label="Limpa Cliente", command=self.limpar_tela)
+
+        filemenu2.add_command(label="Ficha  do cliente", command=self.geraRelatorioCliente)
 Application()
