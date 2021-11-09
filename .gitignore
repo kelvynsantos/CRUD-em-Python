@@ -1,4 +1,5 @@
 .vscode
 /venv/
 clientes.db
- .idea
+/.idea/
+cliente.pdf
