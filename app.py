@@ -1,6 +1,5 @@
 from tkinter import *
 from tkinter import ttk
-#from tkinter import font
 import sqlite3
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter, A4
@@ -10,7 +9,6 @@ from reportlab.platypus import SimpleDocTemplate, Image
 import webbrowser
 
 root = Tk()
-#root.iconbitmap('images/regitry.png')
 
 class Relatorios():
     def printCliente(self):
@@ -44,12 +42,12 @@ class Relatorios():
         self.c.showPage()
         self.c.save()
         self.printCliente()
-class funcoes():
+class Funcoes():
     def limpar_tela(self):
         self.codigo_entry.delete(0, END)
-        self.nome_entry.delete(0, END)
-        self.telefone_entry.delete(0, END)
         self.cidade_entry.delete(0, END)
+        self.telefone_entry.delete(0, END)
+        self.nome_entry.delete(0, END)
     def conecta_db(self):
         self.conne = sqlite3.connect("clientes.db")
         self.cursor = self.conne.cursor();print("Conectando ao DB")
@@ -57,7 +55,6 @@ class funcoes():
         self.conne.close();print("Desconectando ao DB")
     def montaTabelas(self):
         self.conecta_db()
-    #creating the DB
         self.cursor.execute(""" 
             CREATE TABLE IF NOT EXISTS clientes( 
                 cod INTEGER PRIMARY KEY, 
@@ -73,26 +70,7 @@ class funcoes():
         self.nome = self.nome_entry.get()
         self.telefone = self.telefone_entry.get()
         self.cidade = self.cidade_entry.get()
-    def add_cliente(self):
-        self.variaveis()
-        self.conecta_db()
-        self.cursor.execute(""" 
-            INSERT INTO clientes (nome_cliente, telefone, cidade) VALUES (?,?,?)""", (self.nome, self.telefone, self.cidade))
-        self.conne.commit()
-        self.desconecta_db()
-        self.select_lista()
-        self.limpar_tela()
-    def select_lista(self):
-        self.listaCli.delete(*self.listaCli.get_children())
-        self.conecta_db()
-        lista = self.cursor.execute("""SELECT cod, nome_cliente, telefone, cidade FROM clientes 
-            ORDER BY nome_cliente ASC; """)
-
-        for i in lista:
-            self.listaCli.insert("", END, values=i)
-        self.conne.commit()
-        self.desconecta_db()
-    def OnDoubleClick(self,event):
+    def OnDoubleClick(self, event):
         self.limpar_tela()
         self.listaCli.selection()
 
@@ -102,23 +80,40 @@ class funcoes():
             self.nome_entry.insert(END, col2)
             self.telefone_entry.insert(END, col3)
             self.cidade_entry.insert(END, col4)
-    def deleta_cliente(self):
-         self.variaveis()
-         self.conecta_db()
-         self.cursor.execute("""DELETE FROM clientes WHERE cod = ?""", (self.codigo))
-         self.conne.commit()
-         self.desconecta_db()
-         self.limpar_tela()
-         self.select_lista()
-    def altera_cliente(self):
+    def add_cliente(self):
         self.variaveis()
         self.conecta_db()
-        self.cursor.execute("""UPDATE clientes SET nome_cliente = ?, telefone = ?, cidade = ? 
-                WHERE cod = ?""", (self.nome, self.telefone, self.cidade, self.codigo))
+        self.cursor.execute(""" INSERT INTO clientes (nome_cliente, telefone, cidade)  
+            VALUES (?, ?, ?)""", (self.nome, self.telefone, self.cidade))
         self.conne.commit()
         self.desconecta_db()
         self.select_lista()
         self.limpar_tela()
+    def altera_cliente(self):
+        self.variaveis()
+        self.conecta_db()
+        self.cursor.execute("""UPDATE clientes SET nome_cliente = ?, telefone = ?, cidade = ? 
+            WHERE cod = ?""", (self.nome, self.telefone, self.cidade, self.codigo))
+        self.conne.commit()
+        self.desconecta_db()
+        self.select_lista()
+        self.limpar_tela()
+    def deleta_cliente(self):
+         self.variaveis()
+         self.conecta_db()
+         self.cursor.execute("""DELETE FROM clientes WHERE cod = ?""", (self.codigo,))
+         self.conne.commit()
+         self.desconecta_db()
+         self.limpar_tela()
+         self.select_lista()
+    def select_lista(self):
+        self.listaCli.delete(*self.listaCli.get_children())
+        self.conecta_db()
+        lista = self.cursor.execute("""SELECT cod, nome_cliente, telefone, cidade FROM clientes 
+            ORDER BY nome_cliente ASC; """)
+        for i in lista:
+            self.listaCli.insert("", END, values=i)
+        self.desconecta_db()
     def busca_cliente(self):
         self.conecta_db()
         self.listaCli.delete(*self.listaCli.get_children())
@@ -133,8 +128,6 @@ class funcoes():
             self.listaCli.insert("", END, values=1)
         self.limpar_tela()
         self.desconecta_db()
-
-
 style = ttk.Style()
 style.theme_use("clam")
 style.configure("Treeview",
@@ -148,7 +141,7 @@ style.map('listacli',
     background=[('selected','green')])
 
 
-class Application(funcoes, Relatorios):
+class Application(Funcoes, Relatorios):
     def __init__(self):
         self.root = root
         self.tela()
@@ -178,22 +171,25 @@ class Application(funcoes, Relatorios):
         self.frame2.place(relx=0.02, rely=0.5, relwidth=0.96, relheight=0.46)
 
     def widgets_frame1(self):
+        self.canvas_bt = Canvas(self.frame1, bd=0, bg='#1e3743', highlightbackground='gray',highlightthickness=5)
+        self.canvas_bt.place(relx=0.19,rely= 0.08, relwidth=0.22, relheight=0.19)
+
         # limpar
         self.bt_limpar = Button(
             self.frame1, text="Limpar", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold')
                     , command= self.limpar_tela)
         self.bt_limpar.place(relx=0.2, rely=0.1, relwidth=0.1, relheight=0.15)
         # buscar
-        self.bt_buscar = Button(self.frame1, text="Buscar", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold'), command=self.busca_cliente)
+        self.bt_buscar = Button(self.frame1, text="Buscar", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold'), command= self.busca_cliente)
         self.bt_buscar.place(relx=0.3, rely=0.1, relwidth=0.1, relheight=0.15)
         # novo
         self.bt_novo = Button(self.frame1, text="Novo", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold'), command= self.add_cliente)
         self.bt_novo.place(relx=0.6, rely=0.1, relwidth=0.1, relheight=0.15)
         # alterar
-        self.bt_alterar = Button(self.frame1, text="Alterar", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold'), command=self.altera_cliente)
+        self.bt_alterar = Button(self.frame1, text="Alterar", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold'), command= self.altera_cliente)
         self.bt_alterar.place(relx=0.7, rely=0.1, relwidth=0.1, relheight=0.15)
         # apagar
-        self.bt_apagar = Button(self.frame1, text="Apagar", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold'), command=self.deleta_cliente)
+        self.bt_apagar = Button(self.frame1, text="Apagar", bd=3, bg='#422fa2', fg='white',font=('verdana',8,'bold'), command= self.deleta_cliente)
         self.bt_apagar.place(relx=0.8, rely=0.1, relwidth=0.1, relheight=0.15)
 
         # label input codigo
@@ -237,16 +233,15 @@ class Application(funcoes, Relatorios):
         self.listaCli.column("#2",width=200)
         self.listaCli.column("#3",width=125)
         self.listaCli.column("#4",width=125)
-
         self.listaCli.place(relx=0.01, rely=0.1, relwidth=0.95, relheight=0.85)
 
         self.scroolLista = Scrollbar(self.frame2, orient='vertical')
         self.listaCli.configure(yscroll=self.scroolLista.set)
         self.scroolLista.place(relx=0.96,rely=0.1,relwidth=0.04, relheight=0.85)
-        self.listaCli.bind("<Double-1>",self.OnDoubleClick)
+        self.listaCli.bind("<Double-1>", self.OnDoubleClick)
     def Menu(self):
         menubar = Menu(self.root)
-        self.root.config(menu = menubar)
+        self.root.config(menu=menubar)
         filemenu1 = Menu(menubar)
         filemenu2 = Menu(menubar)
 
