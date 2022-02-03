@@ -4,3 +4,4 @@ clientes.db
 /.idea/
 cliente.pdf
 app.spec
+/build/
